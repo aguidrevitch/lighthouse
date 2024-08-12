@@ -238,32 +238,31 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
       return Promise.resolve();
     }
 
-    return new Promise((resolve, reject) => {
-      executionContext.evaluate(
-        checkTimeSinceLastLongTaskInPage, {args: [], useIsolation: true})
-        .then((timeSinceLongTask) => {
-          if (canceled) {
-            return Promise.resolve().then(resolve);
-          }
+    return executionContext.evaluate(checkTimeSinceLastLongTaskInPage, { args: [], useIsolation: true })
+      .then((timeSinceLongTask) => {
+        if (canceled) {
+          return;
+        }
 
-          if (typeof timeSinceLongTask === 'number') {
-            if (timeSinceLongTask >= waitForCPUQuiet) {
-              log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
-              return Promise.resolve().then(resolve);
-            } else {
-              log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
-              const timeToWait = waitForCPUQuiet - timeSinceLongTask;
-              lastTimeout = setTimeout(() =>
-                checkForQuiet(executionContext)
-                  .then(resolve)
-                  .catch(reject),
-                timeToWait);
-            }
-          } else {
-            reject(new Error('Invalid value from checkTimeSinceLastLongTaskInPage'));
-          }
-        }).catch(reject);
-    });
+        if (typeof timeSinceLongTask !== 'number') {
+          throw new Error('Invalid value from checkTimeSinceLastLongTaskInPage');
+        }
+
+        log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
+
+        if (timeSinceLongTask >= waitForCPUQuiet) {
+          return;
+        }
+
+        const timeToWait = waitForCPUQuiet - timeSinceLongTask;
+        return new Promise((resolve, reject) => {
+          lastTimeout = setTimeout(() => {
+            checkForQuiet(executionContext)
+              .then(resolve)
+              .catch(reject);
+          }, timeToWait);
+        });
+      });
   }
 
   /** @type {(() => void)} */
