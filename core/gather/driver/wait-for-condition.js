@@ -238,7 +238,8 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
       return Promise.resolve();
     }
 
-    return executionContext.evaluate(checkTimeSinceLastLongTaskInPage, { args: [], useIsolation: true })
+    return executionContext.evaluate(
+      checkTimeSinceLastLongTaskInPage, {args: [], useIsolation: true})
       .then((timeSinceLongTask) => {
         if (canceled) {
           return;
