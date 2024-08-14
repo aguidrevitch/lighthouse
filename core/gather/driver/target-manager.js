@@ -78,7 +78,8 @@ class TargetManager extends ProtocolEventEmitter {
     } catch (err) {
       // The page can be closed at the end of the run before this CDP function returns.
       // In these cases, just ignore the error since we won't need the page anyway.
-      if (this._enabled) throw err;
+      log.warn('target-manager', `Error setting auto-attach: ${err}`);
+      // if (this._enabled) throw err;
     }
   }
 
