@@ -231,26 +231,37 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
 
   /**
    * @param {ExecutionContext} executionContext
-   * @param {() => void} resolve
    * @return {Promise<void>}
    */
-  async function checkForQuiet(executionContext, resolve) {
-    if (canceled) return;
-    const timeSinceLongTask =
-      await executionContext.evaluate(
-        checkTimeSinceLastLongTaskInPage, {args: [], useIsolation: true});
-    if (canceled) return;
-
-    if (typeof timeSinceLongTask === 'number') {
-      if (timeSinceLongTask >= waitForCPUQuiet) {
-        log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
-        resolve();
-      } else {
-        log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
-        const timeToWait = waitForCPUQuiet - timeSinceLongTask;
-        lastTimeout = setTimeout(() => checkForQuiet(executionContext, resolve), timeToWait);
-      }
+  function checkForQuiet(executionContext) {
+    if (canceled) {
+      return Promise.resolve();
     }
+
+    return executionContext.evaluate(
+      checkTimeSinceLastLongTaskInPage, {args: [], useIsolation: true})
+      .then((timeSinceLongTask) => {
+        if (canceled) {
+          return;
+        }
+
+        if (typeof timeSinceLongTask === 'number') {
+          if (timeSinceLongTask >= waitForCPUQuiet) {
+            log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
+            return;
+          } else {
+            log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
+            const timeToWait = waitForCPUQuiet - timeSinceLongTask;
+            return new Promise((resolve, reject) => {
+              lastTimeout = setTimeout(() => {
+                checkForQuiet(executionContext)
+                  .then(resolve)
+                  .catch(reject);
+              }, timeToWait);
+            });
+          }
+        }
+      });
   }
 
   /** @type {(() => void)} */
@@ -262,7 +273,8 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
   /** @type {Promise<void>} */
   const promise = new Promise((resolve, reject) => {
     executionContext.evaluate(registerPerformanceObserverInPage, {args: [], useIsolation: true})
-      .then(() => checkForQuiet(executionContext, resolve))
+      .then(() => checkForQuiet(executionContext))
+      .then(resolve)
       .catch(reject);
     cancel = () => {
       if (canceled) return;
