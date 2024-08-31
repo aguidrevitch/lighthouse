@@ -252,10 +252,6 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
             const timeToWait = waitForCPUQuiet - timeSinceLongTask;
             return new Promise((resolve, reject) => {
               setTimeout(() => {
-                if (canceled) {
-                  resolve();
-                  return;
-                }
                 checkForQuiet(executionContext)
                   .then(resolve)
                   .catch(reject);
