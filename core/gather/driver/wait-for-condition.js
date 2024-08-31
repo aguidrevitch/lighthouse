@@ -225,8 +225,6 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
     };
   }
 
-  /** @type {NodeJS.Timeout|undefined} */
-  let lastTimeout;
   let canceled = false;
 
   /**
@@ -253,7 +251,11 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
             log.verbose('waitFor', `CPU has been idle for ${timeSinceLongTask} ms`);
             const timeToWait = waitForCPUQuiet - timeSinceLongTask;
             return new Promise((resolve, reject) => {
-              lastTimeout = setTimeout(() => {
+              setTimeout(() => {
+                if (canceled) {
+                  resolve();
+                  return;
+                }
                 checkForQuiet(executionContext)
                   .then(resolve)
                   .catch(reject);
@@ -279,7 +281,6 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
     cancel = () => {
       if (canceled) return;
       canceled = true;
-      if (lastTimeout) clearTimeout(lastTimeout);
       reject(new Error('Wait for CPU idle canceled'));
     };
   });
