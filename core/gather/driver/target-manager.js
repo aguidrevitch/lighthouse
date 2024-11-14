@@ -175,6 +175,9 @@ class TargetManager extends ProtocolEventEmitter {
       // Lighthouse isn't interested in these targets anyway so we can just ignore them.
       if (/'Target.getTargetInfo' wasn't found/.test(err)) return;
 
+      // to prevent FastPixel crashes
+      if ('PROTOCOL_TIMEOUT' === err.code) return;
+
       // Worker targets can be a bit fickle and we only enable them for diagnostic purposes.
       // We shouldn't throw a fatal error if there were issues attaching to them.
       if (targetType === 'worker') {
