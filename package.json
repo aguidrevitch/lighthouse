@@ -1,7 +1,7 @@
 {
   "name": "@aguidrevitch/lighthouse",
   "type": "module",
-  "version": "12.2.1-fastpixel.2",
+  "version": "12.2.1-fastpixel.3",
   "description": "Automated auditing, performance metrics, and best practices for the web.",
   "main": "./core/index.js",
   "bin": {
